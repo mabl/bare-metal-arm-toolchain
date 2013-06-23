@@ -13,7 +13,6 @@
 # arm-toolchain/install contains the result of make install for each tool.
 # arm-toolchain/status contains the status of each part of the process (logs, errors...)
 
-
 # PACKAGE_DESCRIPTION = BASE_URL ARCHIVE_BASENAME PACKAGE_VERSION ARCHIVE_TYPE URL_OPTIONS
 #
 BINUTILS="http://ftp.gnu.org/gnu/binutils binutils 2.23.1 tar.bz2"
@@ -33,6 +32,14 @@ PREFIX=${BASEDIR}/install		# Install location of your final toolchain
 PARALLEL=-j$(getconf _NPROCESSORS_ONLN)
 
 MULTILIB_LIST="--with-multilib-list=armv6-m,armv7-m,armv7e-m,armv7-r"
+
+# Find python2 command. If python2 is not known, assume that python refers 
+# to it.
+if which python2 &> /dev/null; then
+  PYTHON_PATH=$(which python2)
+else
+  PYTHON_PATH=$(which python)
+fi
 
 export PATH="${PREFIX}/bin:${PATH}"
 mkdir -p ${ARCHIVES} ${SOURCES} ${BUILD} ${STATUS}
@@ -318,7 +325,7 @@ configure \
     --enable-interwork \
     --enable-multilib \
     --disable-werror \
-    --with-python=/usr/bin/python2 \
+    --with-python=${PYTHON_PATH} \
     --with-system-readline
 domake
 domake install
