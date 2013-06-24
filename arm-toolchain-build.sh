@@ -15,10 +15,19 @@
 
 # PACKAGE_DESCRIPTION = BASE_URL ARCHIVE_BASENAME PACKAGE_VERSION ARCHIVE_TYPE URL_OPTIONS
 #
+
+
+# Stable sources
 BINUTILS="http://ftp.gnu.org/gnu/binutils binutils 2.23.1 tar.bz2"
 GCC="ftp://ftp.lip6.fr/pub/gcc/releases/gcc-4.8.1 gcc 4.8.1 tar.bz2"
 GDB="http://ftp.gnu.org/gnu/gdb gdb 7.6 tar.bz2"
 NEWLIB="ftp://sources.redhat.com/pub/newlib newlib 1.20.0 tar.gz"
+
+# Bleeding edge sources
+# BINUTILS="git://sourceware.org/git binutils master"
+# GCC="git://gcc.gnu.org/git gcc master"
+# GDB="git://sourceware.org/git gdb master"
+# NEWLIB="git://sourceware.org/git newlib master"
 
 TARGET=arm-none-eabi			# Or: TARGET=arm-elf
 
@@ -105,8 +114,12 @@ fetch() {
             rm -rf "$ANAME-git"
             echo -n "Downloading $SOURCE ... "
             echo git clone "$URL/$ANAME.git" >${CMD}
-            ((git clone "$URL/$ANAME.git" || git clone "$URL/$ANAME") \
-                && mv ${ANAME} ${ANAME}-git) >${LOG} 2>${ERR} || die
+            (git clone "$URL/$ANAME.git" $SOURCE || \
+             git clone "$URL/$ANAME" $SOURCE) >${LOG} 2>${ERR} || die
+            
+            cd $SOURCE
+            git checkout $AVERSION >${LOG} 2>${ERR} || die
+            
             ;;
     esac
     echo "OK."
@@ -119,6 +132,13 @@ extract() {
     LOG=${STATUS}/${SOURCE}.extract.log
     ERR=${STATUS}/${SOURCE}.extract.errors
     DONE=${STATUS}/${SOURCE}.extract.done
+
+    case ${URL} in
+        git://*)
+            echo "${SOURCE} does not need to be extracted"
+            return
+            ;;
+    esac
 
     cd ${BASEDIR}
     if [ -e ${DONE} ] ; then
@@ -277,9 +297,12 @@ configure \
     --disable-newlib-supplied-syscalls \
     --enable-newlib-io-long-long \
     --enable-newlib-reent-small \
-    --enable-newlib-register-fini \
+    --enable-newlib-io-c99-format \
+    --disable-newlib-atexit-dynamic-alloc \
+    --disable-newlib-fvwrite-in-streamio \
+    --disable-newlib-wide-orient \
+    --disable-newlib-fseek-optimization \
     --enable-target-optspace
-    #--enable-newlib-hw-fp
 domake
 domake install
 
